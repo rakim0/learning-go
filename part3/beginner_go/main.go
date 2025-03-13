@@ -2,112 +2,58 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 )
 
-func add(a int, b int) int {
-	return a + b
-}
-
-// if you want to return multiple objects then
-func add_subtract(a, b int) (int, int) {
-	return a + b, a - b
+type Person struct {
+	name string
+	age  int
 }
 
 func main() {
-	age := 30
-	if age >= 13 {
-		fmt.Println("you're a teenager")
-	} else if age >= 18 {
-		fmt.Println("you're an adult")
-	} else {
-		fmt.Println("you are a child")
+	employee := struct {
+		name string
+		id   int
+	}{
+		name: "Alice",
+		id:   121,
+	}
+	fmt.Println(reflect.TypeOf(employee))
+	type Address struct {
+		Street string
+		City   string
+	}
+	type Contact struct {
+		Name    string
+		Address Address
+		Phone   string
 	}
 
-	day := "Tuesday"
-	switch day {
-	case "Monday":
-		fmt.Println("Start of the week!")
-	case "Tuesday", "Wednesday", "Thursday":
-		fmt.Println("Midweek!")
-	case "Friday":
-		fmt.Println("TGIF")
-	default:
-		fmt.Println("Weekend!")
+	contact := Contact{
+		Name: "Rakim",
+		Address: Address{
+			City:   "Prayagraj",
+			Street: "Pipalgaon",
+		},
+		Phone: "7044550905",
 	}
 
-	// for loop
-	for i := 1; i <= 3; i++ {
-		fmt.Printf("%d ", i)
+	fmt.Printf("%+v\n", contact)
+
+	person := Person{
+		name: "Rakim",
 	}
-	fmt.Println()
+	fmt.Println("Person's Old Name: ", person.name)
+	person.modifyPerson("Melkey")
+	fmt.Println("Person's New Name: ", person.name)
 
-	// while loop
-	counter := 0
-	for counter < 3 {
-		fmt.Println("this is the counter", counter)
-		counter++
-	}
+	x := 20
+	x_ptr := &x
+	fmt.Println("Value of x: ", x)
+	*x_ptr = 1
+	fmt.Println("New value of x:", x)
+}
 
-	// infinite loop
-	// for {
-
-	// }
-
-	// arrays
-	numbers := [5]int{1, 2, 3, 4, 5}
-	for i := range len(numbers) {
-		fmt.Println(numbers[i])
-	}
-
-	matrix := [2][3]int{
-		{1, 2, 3},
-		{4, 5, 6},
-	}
-
-	for i := range len(matrix) {
-		for j := range len(matrix[i]) {
-			fmt.Printf("%d ", matrix[i][j])
-		}
-		fmt.Println()
-	}
-
-	// allNumbers := numbers[:]
-	// firstThree := numbers[0:3]
-
-	fruits := []string{}
-	fruits = append(fruits, "kiwi")
-	fmt.Println("Fruits: ", fruits)
-	fruits = append(fruits, "blueberry", "orange")
-	fmt.Println("Fruits: ", fruits)
-	moreFruits := []string{"apple", "pineapple"}
-	fruits = append(fruits, moreFruits...)
-	fmt.Println("Fruits: ", fruits)
-
-	// making a slice with an initial size
-	numbers2 := make([]int, 2)                 // slice with length 2 and capacity 2
-	numbersWithCapacity := make([]int, 2, 100) // slice with length 2 and capacity 3
-	fmt.Println(len(numbersWithCapacity), cap(numbersWithCapacity))
-	fmt.Println(len(numbers2), cap(numbers2))
-	fmt.Println("Uninitialized slice: ", numbersWithCapacity[0])
-	// iterating over values
-	fmt.Println("Numbers array: ")
-	for _, val := range numbers {
-		fmt.Printf("%d ", val)
-	}
-	fmt.Println()
-
-	capitalCities := map[string]string{
-		"US":    "Washington D.C.",
-		"India": "New Delhi",
-		"UK":    "London",
-	}
-
-	capital, exists := capitalCities["Germany"]
-	if exists {
-		fmt.Printf("Capital: %s", capital)
-	} else {
-		fmt.Printf("Capital of Germany doesn't exist in the map.\n")
-	}
-	delete(capitalCities, "UK")
-	fmt.Printf("%v\n", capitalCities)
+func (p *Person) modifyPerson(name string) {
+	p.name = name
 }
