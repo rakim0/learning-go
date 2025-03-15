@@ -9,6 +9,7 @@ import (
 
 	"github.com/rakim0/femProject/internal/api"
 	"github.com/rakim0/femProject/internal/store"
+	"github.com/rakim0/femProject/migrations"
 )
 
 type Application struct {
@@ -18,20 +19,25 @@ type Application struct {
 }
 
 func NewApplication() (*Application, error) {
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	workoutHandler := api.NewWorkoutHandler()
 	pgDB, err := store.Open()
 	if err != nil {
 		return nil, err
 	}
 	err = store.MigrateFS(pgDB, migrations.FS, ".")
+
 	if err != nil {
 		panic(err)
 	}
+
+	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
+	workoutStore := store.NewPostgresWorkoutStore(pgDB)
+	workoutHandler := api.NewWorkoutHandler(workoutStore)
+
 	app := &Application{
 		Logger:         logger,
 		WorkoutHandler: workoutHandler,
-		DB:             db,
+		DB:             pgDB,
 	}
 	return app, nil
 }
