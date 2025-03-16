@@ -3,82 +3,74 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/rakim0/femProject/internal/store"
+	"github.com/rakim0/femProject/internal/utils"
 )
 
 type WorkoutHandler struct {
 	workoutStore store.WorkoutStore
+	logger       *log.Logger
 }
 
-func NewWorkoutHandler(workoutStore store.WorkoutStore) *WorkoutHandler {
+func NewWorkoutHandler(workoutStore store.WorkoutStore, logger *log.Logger) *WorkoutHandler {
 	return &WorkoutHandler{
 		workoutStore: workoutStore,
+		logger:       logger,
 	}
 }
 
 func (wh *WorkoutHandler) HandleGetWorkoutByID(w http.ResponseWriter, r *http.Request) {
-	paramsWorkoutID := chi.URLParam(r, "id")
-	if paramsWorkoutID == "" {
-		http.NotFound(w, r)
-		return
-	}
-
-	workoutId, err := strconv.ParseInt(paramsWorkoutID, 10, 64)
+	workoutId, err := utils.ReadIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		wh.logger.Printf("ERROR: READ ID PARAM FAILED: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid workout ID"})
 		return
 	}
-
 	workout, err := wh.workoutStore.GetWorkoutByID(workoutId)
 	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "failed to fetch the workout", http.StatusNotFound)
+		wh.logger.Printf("ERROR: GetWorkoutByID: %v", err)
+		utils.WriteJson(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(workout)
-	fmt.Fprintf(w, "This is the workout ID: %d\n", workoutId)
+	utils.WriteJson(w, http.StatusOK, utils.Envelope{"workout": workout})
 }
 
 func (wh *WorkoutHandler) HandleCreateWorkout(w http.ResponseWriter, r *http.Request) {
 	var workout store.Workout
 	err := json.NewDecoder(r.Body).Decode(&workout)
 	if err != nil {
-		fmt.Printf("HandleCreateWorkout JSON DECODE: %s\n", err)
-		http.Error(w, "failed to create workout", http.StatusInternalServerError)
+		wh.logger.Printf("ERROR: decodingCreateWorkout: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request sent"})
 		return
 	}
 
 	createdWorkout, err := wh.workoutStore.CreateWorkout(&workout)
 	if err != nil {
-		fmt.Printf("HandleCreateWorkout DB: %s\n", err)
-		http.Error(w, "failed to create workout", http.StatusInternalServerError)
+		wh.logger.Printf("ERROR: createWorkout: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request sent"})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(createdWorkout)
+	err = utils.WriteJson(w, http.StatusCreated, utils.Envelope{"workout": createdWorkout})
+	if err != nil {
+		http.Error(w, "could not write back to client", http.StatusInternalServerError)
+	}
 }
 
 func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http.Request) {
-	paramsWorkoutID := chi.URLParam(r, "id")
-	if paramsWorkoutID == "" {
-		http.NotFound(w, r)
+	workoutId, err := utils.ReadIDParam(r)
+	if err != nil {
+		wh.logger.Printf("ERROR: READ ID PARAM FAILED: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid workout ID"})
 		return
 	}
 
-	workoutId, err := strconv.ParseInt(paramsWorkoutID, 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
 	existingWorkout, err := wh.workoutStore.GetWorkoutByID(workoutId)
 	if err != nil {
+		wh.logger.Printf("Error: updateWorkoutByID: %v", err)
+		utils.WriteJson(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		http.Error(w, "failed to fetch workout", http.StatusInternalServerError)
 		return
 	}
@@ -101,7 +93,8 @@ func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http
 
 	err = json.NewDecoder(r.Body).Decode(&updateWorkoutRequest)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		wh.logger.Printf("Error: decodingUpdateRequest: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid server payload"})
 		return
 	}
 	if updateWorkoutRequest.Title != nil {
@@ -122,8 +115,8 @@ func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http
 
 	err = wh.workoutStore.UpdateWorkout(existingWorkout)
 	if err != nil {
-		fmt.Println("update workout error: ", err)
-		http.Error(w, "failed to update the workout", http.StatusInternalServerError)
+		wh.logger.Printf("Error: updatingWorkout: %v", err)
+		utils.WriteJson(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -132,26 +125,23 @@ func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http
 }
 
 func (wh *WorkoutHandler) HandleDeleteWorkoutById(w http.ResponseWriter, r *http.Request) {
-	paramsWorkoutID := chi.URLParam(r, "id")
-	if paramsWorkoutID == "" {
-		http.NotFound(w, r)
-		return
-	}
-	workoutId, err := strconv.ParseInt(paramsWorkoutID, 10, 64)
+	workoutId, err := utils.ReadIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		wh.logger.Printf("ERROR: READ ID PARAM FAILED: %v", err)
+		utils.WriteJson(w, http.StatusBadRequest, utils.Envelope{"error": "invalid workout ID"})
 		return
 	}
 	err = wh.workoutStore.DeleteWorkoutByID(workoutId)
 	if err == sql.ErrNoRows {
-		fmt.Println("delete workout error: ", err)
-		http.Error(w, "failed to delete the workout", http.StatusNotFound)
+		wh.logger.Printf("Error: deleteWorkoutByID: %v", err)
+		utils.WriteJson(w, http.StatusNotFound, utils.Envelope{"error": "row not found"})
 		return
 	}
 	if err != nil {
-		http.Error(w, "error deleting workout", http.StatusInternalServerError)
+		wh.logger.Printf("Error: deleteWorkoutByID: %v", err)
+		utils.WriteJson(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-	fmt.Fprintf(w, "workout deleted successfully")
+	utils.WriteJson(w, http.StatusInternalServerError, utils.Envelope{"success": "record deleted successfully"})
 }
