@@ -11,7 +11,7 @@ import (
 
 type Envelope map[string]interface{}
 
-func WriteJson(w http.ResponseWriter, status int, data Envelope) error {
+func WriteJSON(w http.ResponseWriter, status int, data Envelope) error {
 	js, err := json.MarshalIndent(data, "", "	")
 	if err != nil {
 		return err
