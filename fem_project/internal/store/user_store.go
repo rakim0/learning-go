@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -137,7 +138,7 @@ func (s *PostgresUserStore) UpdateUser(user *User) error {
 func (s *PostgresUserStore) GetUserToken(scope, plaintextPassword string) (*User, error) {
 	tokenHash := sha256.Sum256([]byte(plaintextPassword))
 	query := `
-	SELECT u.id, u.username, u.password_hash, u.bio, u.created_at, u.updated_at
+	SELECT u.id, u.username, u.email, u.password_hash, u.bio, u.created_at, u.updated_at
 	FROM users u
 	INNER JOIN tokens t
 	ON t.user_id = u.id
@@ -155,6 +156,7 @@ func (s *PostgresUserStore) GetUserToken(scope, plaintextPassword string) (*User
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
+	fmt.Println("token: ", tokenHash[:])
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

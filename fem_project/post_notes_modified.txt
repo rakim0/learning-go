@@ -1,0 +1,21 @@
+curl -X PUT "http://localhost:8080/workouts/12" \
+     -H "Authorization: Bearer NBKIOI5E4K2VXOG4FZ5XI5G6TNNQOQMXVTOI6N4DZPK3LIZXJG3A" \
+     -H "Content-Type: application/json" \
+     -d '{
+          "title": "Updated Cardio",
+          "description": "A relaxed 45-minute walk after dinner.",
+          "duration_minutes": 45,
+          "calories_burned": 250,
+          "entries": [
+              {
+                  "exercise_name": "Walking",
+                  "sets": 1,
+                  "duration_seconds": 2700,
+                  "weight": 0,
+                  "notes": "Keep a steady pace",
+                  "order_index": 1
+              }
+          ]
+        }'
+
+
