@@ -103,7 +103,7 @@ func TestCreateWorkout(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, createdWorkout.ID, retrieved.ID)
 			assert.Equal(t, len(testcase.workout.Entries), len(retrieved.Entries))
-			for i, _ := range retrieved.Entries {
+			for i := range retrieved.Entries {
 				assert.Equal(t, testcase.workout.Entries[i].ExerciseName, retrieved.Entries[i].ExerciseName)
 				assert.Equal(t, testcase.workout.Entries[i].Sets, retrieved.Entries[i].Sets)
 				assert.Equal(t, testcase.workout.Entries[i].OrderIndex, retrieved.Entries[i].OrderIndex)
